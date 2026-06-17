@@ -11,6 +11,7 @@ import PoolBoard from "../components/status/PoolBoard.jsx";
 import TeamRosterColumn from "../components/status/TeamRosterColumn.jsx";
 import ChatPanel from "../components/status/ChatPanel.jsx";
 import PickAnnouncementModal from "../components/status/PickAnnouncementModal.jsx";
+import ResultBoard from "../components/status/ResultBoard.jsx";
 
 export default function StatusPage() {
   const { draft, players, picks, loading, rosterByTeam } = useDraft();
@@ -72,6 +73,11 @@ export default function StatusPage() {
       </header>
 
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-4 pt-4 lg:grid-cols-3">
+        {status === STATUS.DONE && (
+          <div className="lg:col-span-3">
+            <ResultBoard draft={draft} picks={picks} />
+          </div>
+        )}
         <div className="space-y-4 lg:col-span-2">
           <YouTubeLivePane videoId={draft?.youtubeVideoId} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

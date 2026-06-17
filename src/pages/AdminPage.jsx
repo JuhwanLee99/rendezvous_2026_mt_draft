@@ -11,11 +11,13 @@ import SetupPanel from "../components/admin/SetupPanel.jsx";
 import DraftControls from "../components/admin/DraftControls.jsx";
 import TeamRosterColumn from "../components/status/TeamRosterColumn.jsx";
 import PoolBoard from "../components/status/PoolBoard.jsx";
+import ResultBoard from "../components/status/ResultBoard.jsx";
 
 export default function AdminPage() {
   const { ready, user, isAdmin, adminSignOut } = useAuth();
   const actions = useDraftActions();
-  const { draft, players, loading, availablePlayers, rosterByTeam } = useDraft();
+  const { draft, players, picks, loading, availablePlayers, rosterByTeam } =
+    useDraft();
 
   const { ensureDraft } = actions;
   useEffect(() => {
@@ -64,7 +66,13 @@ export default function AdminPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <>
+            {status === STATUS.DONE && (
+              <div className="mb-6">
+                <ResultBoard draft={draft} picks={picks} />
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="space-y-6">
               <DraftControls
                 draft={draft}
@@ -98,7 +106,8 @@ export default function AdminPage() {
               </div>
               <PoolBoard players={players} teamNames={teamNames} />
             </div>
-          </div>
+            </div>
+          </>
         )}
       </main>
     </div>
