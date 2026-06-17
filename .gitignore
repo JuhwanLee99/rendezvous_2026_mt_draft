@@ -24,6 +24,9 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# Office 임시/잠금 파일
+~$*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
