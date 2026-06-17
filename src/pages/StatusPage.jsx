@@ -13,7 +13,7 @@ import ChatPanel from "../components/status/ChatPanel.jsx";
 import PickAnnouncementModal from "../components/status/PickAnnouncementModal.jsx";
 import ResultBoard from "../components/status/ResultBoard.jsx";
 
-export default function StatusPage() {
+export default function StatusPage({ hideVideo = false }) {
   const { draft, players, picks, loading, rosterByTeam } = useDraft();
   const { viewerCount } = usePresence("status");
   const { latestPick, dismiss } = useNewPickAnnouncement(picks);
@@ -42,7 +42,9 @@ export default function StatusPage() {
               <h1 className="text-base font-extrabold sm:text-lg">
                 Rendezvous 청백전 드래프트
               </h1>
-              <p className="text-[11px] text-white/70">실시간 현황</p>
+              <p className="text-[11px] text-white/70">
+                {hideVideo ? "현장 보드" : "실시간 현황"}
+              </p>
             </div>
           </div>
           <ViewerCount count={viewerCount} />
@@ -79,7 +81,7 @@ export default function StatusPage() {
           </div>
         )}
         <div className="space-y-4 lg:col-span-2">
-          <YouTubeLivePane videoId={draft?.youtubeVideoId} />
+          {!hideVideo && <YouTubeLivePane videoId={draft?.youtubeVideoId} />}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TeamRosterColumn
               team={TEAM.A}
@@ -109,6 +111,10 @@ export default function StatusPage() {
       <footer className="mx-auto mt-8 max-w-6xl px-4 text-center text-xs text-slate-400">
         <Link to="/team" className="hover:text-navy">
           대표자 입장
+        </Link>
+        <span className="mx-2">·</span>
+        <Link to="/board" className="hover:text-navy">
+          현장 보드
         </Link>
         <span className="mx-2">·</span>
         <Link to="/admin" className="hover:text-navy">
