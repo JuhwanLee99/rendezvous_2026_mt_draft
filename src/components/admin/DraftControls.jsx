@@ -73,6 +73,7 @@ export default function DraftControls({ draft, availablePlayers, actions }) {
                 {availablePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
+                    {p.position ? ` (${p.position})` : ""}
                   </option>
                 ))}
               </select>

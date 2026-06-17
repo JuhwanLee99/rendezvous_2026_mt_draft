@@ -1,8 +1,16 @@
 import { useState } from "react";
 import Modal from "../common/Modal.jsx";
+import { POSITION_CAP } from "../../lib/constants.js";
 
-// 지명 가능한 선수 목록. enabled(=내 차례 & 활성화) 일 때만 선택 가능.
-export default function PlayerPickList({ players, enabled, onPick }) {
+// 지명 가능한 선수를 포지션별로 묶어 표시. 우리 팀이 이미 cap명 채운 포지션은 비활성.
+export default function PlayerPickList({
+  players,
+  enabled,
+  onPick,
+  positions = [],
+  teamPosCount = {},
+  cap = POSITION_CAP,
+}) {
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +29,21 @@ export default function PlayerPickList({ players, enabled, onPick }) {
     }
   };
 
+  // 포지션 목록 순서대로, 남은 선수가 있는 그룹만
+  const known = positions;
+  const extra = [
+    ...new Set(
+      players.map((p) => p.position).filter((p) => p && !known.includes(p)),
+    ),
+  ];
+  const groups = [...known, ...extra]
+    .map((pos) => ({
+      pos,
+      count: teamPosCount?.[pos] || 0,
+      list: players.filter((p) => p.position === pos),
+    }))
+    .filter((g) => g.list.length > 0);
+
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
@@ -34,35 +57,60 @@ export default function PlayerPickList({ players, enabled, onPick }) {
         </p>
       )}
 
-      {players.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400">
-          남은 선수가 없습니다.
-        </p>
+      {groups.length === 0 ? (
+        <p className="py-8 text-center text-sm text-slate-400">남은 선수가 없습니다.</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-2">
-          {players.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                disabled={!enabled}
-                onClick={() => setSelected(p)}
-                className={`w-full rounded-xl border px-3 py-3 text-base font-semibold transition ${
-                  enabled
-                    ? "border-navy/30 bg-white text-slate-800 active:bg-navy active:text-white"
-                    : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
-                }`}
-              >
-                {p.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-4">
+          {groups.map((g) => {
+            const full = g.count >= cap;
+            return (
+              <div key={g.pos}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-700">{g.pos}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                      full
+                        ? "bg-brand-red/10 text-brand-red"
+                        : "bg-navy/10 text-navy"
+                    }`}
+                  >
+                    {g.count}/{cap}
+                    {full ? " 꽉 참" : ""}
+                  </span>
+                </div>
+                <ul className="grid grid-cols-2 gap-2">
+                  {g.list.map((p) => {
+                    const pickable = enabled && !full;
+                    return (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          disabled={!pickable}
+                          onClick={() => setSelected(p)}
+                          className={`w-full rounded-xl border px-3 py-3 text-base font-semibold transition ${
+                            pickable
+                              ? "border-navy/30 bg-white text-slate-800 active:bg-navy active:text-white"
+                              : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
+                          }`}
+                        >
+                          {p.name}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <Modal open={!!selected} onClose={() => !busy && setSelected(null)} className="text-center">
         <h3 className="text-lg font-bold text-slate-800">선수 지명 확인</h3>
         <p className="mt-3 text-3xl font-black text-navy">{selected?.name}</p>
-        <p className="mt-1 text-sm text-slate-500">이 선수를 지명하시겠습니까?</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {selected?.position} · 이 선수를 지명하시겠습니까?
+        </p>
         {error && <p className="mt-3 text-sm text-brand-red">{error}</p>}
         <div className="mt-6 flex gap-3">
           <button

@@ -28,8 +28,13 @@ export default function PoolBoard({ players, teamNames = {} }) {
                     : "border-slate-200 bg-white text-slate-800"
                 }`}
               >
-                <span className={`truncate font-medium ${picked ? "line-through" : ""}`}>
-                  {p.name}
+                <span className="flex min-w-0 flex-col">
+                  <span className={`truncate font-medium ${picked ? "line-through" : ""}`}>
+                    {p.name}
+                  </span>
+                  {p.position && (
+                    <span className="text-[11px] text-slate-400">{p.position}</span>
+                  )}
                 </span>
                 {picked && (
                   <TeamBadge

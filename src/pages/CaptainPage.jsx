@@ -183,6 +183,8 @@ function CaptainBoard({
           players={availablePlayers}
           enabled={enabled}
           onPick={(playerId) => makePick(playerId, team)}
+          positions={draft?.positions || []}
+          teamPosCount={draft?.posCount?.[team] || {}}
         />
 
         <MyRoster team={team} picks={rosterByTeam[team]} />

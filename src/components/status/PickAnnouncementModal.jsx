@@ -31,6 +31,11 @@ export default function PickAnnouncementModal({ pick, teamName, onClose }) {
         </p>
         <p className="mt-1 text-base text-white/80">지명 선수</p>
         <p className="mt-2 text-5xl font-black drop-shadow">{pick.playerName}</p>
+        {pick.position && (
+          <p className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1 text-lg font-bold">
+            {pick.position}
+          </p>
+        )}
         <button
           type="button"
           onClick={onClose}

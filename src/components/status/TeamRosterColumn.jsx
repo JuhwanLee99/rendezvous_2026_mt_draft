@@ -46,6 +46,11 @@ export default function TeamRosterColumn({ team, name, captainName, picks, highl
                   {round}
                 </span>
                 <span className="font-medium text-slate-800">{p.playerName}</span>
+                {p.position && (
+                  <span className="ml-auto text-xs font-medium text-slate-400">
+                    {p.position}
+                  </span>
+                )}
               </li>
             )),
           )}
