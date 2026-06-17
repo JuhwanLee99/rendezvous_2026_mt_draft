@@ -1,0 +1,151 @@
+rules_version = '2';
+
+// 청백전 드래프트 보안 규칙 (Firebase 무료/Spark, Cloud Functions 미사용)
+//
+// 강제 원칙:
+//  - 관리자: 하드코딩 UID 목록으로 식별. 설정/풀/PIN/시작/리셋/undo/대리지명 전담.
+//  - 대표(익명): 픽만 가능. 트랜잭션의 최종 쓰기셋을 규칙이 교차검증한다.
+//      (a) 선수 available→picked  (b) 현재 차례 팀(currentPicker)  (c) 순번(index==pickCount)
+//      차례 팀은 스네이크 정수-모듈러 공식을 규칙에 인라인해 강제(차기 픽 변조 차단).
+//  - 잔여 한계(수용): 익명이라 "그 픽을 한 사람이 진짜 대표"임은 보장 못 함(대표 사칭).
+//
+// ⚠️ 배포 전: 아래 isAdmin() 의 UID 를 실제 관리자 계정 UID 로 교체할 것.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.uid in [
+        'jLENohdxTpWLl9i8TpTiBH5FFMg2'
+      ];
+    }
+
+    function draftState() {
+      return get(/databases/$(database)/documents/draft/state).data;
+    }
+    function draftAfter() {
+      return getAfter(/databases/$(database)/documents/draft/state).data;
+    }
+
+    // draftEngine.expectedTeam 의 규칙 인라인 형태 (루프 없는 순수 모듈러).
+    // round0(=floor(index/2)) 짝수 ⇔ index % 4 ∈ {0,1}
+    function expectedTeam(index, firstPick) {
+      return (index % 4 < 2)
+        ? (index % 2 == 0 ? firstPick : (firstPick == 'A' ? 'B' : 'A'))
+        : (index % 2 == 0 ? (firstPick == 'A' ? 'B' : 'A') : firstPick);
+    }
+
+    // ===== draft/state : 설정 + 라이브 턴 상태 =====
+    match /draft/state {
+      allow read: if true;
+      allow write: if isAdmin() || (isSignedIn() && isValidTurnAdvance());
+
+      function isValidTurnAdvance() {
+        let b = resource.data;
+        let a = request.resource.data;
+        let complete = a.pickCount >= b.poolSize;
+        return b.status == 'live'
+          && a.pickCount == b.pickCount + 1
+          && a.firstPick == b.firstPick
+          && a.poolSize == b.poolSize
+          && a.teamA == b.teamA
+          && a.teamB == b.teamB
+          && a.youtubeVideoId == b.youtubeVideoId
+          && a.status == (complete ? 'done' : 'live')
+          && a.currentPicker == (complete ? null : expectedTeam(a.pickCount, b.firstPick));
+      }
+    }
+
+    // ===== draft/secrets : PIN 해시 (signed-in read, admin write) =====
+    // PIN 은 소프트 UX 게이트 — 4자리 해시는 브루트포스 가능, 실제 보호 아님(문서화됨).
+    match /draft/secrets {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ===== players : 풀 =====
+    match /players/{playerId} {
+      allow read: if true;
+      // 풀 생성/삭제는 setup 단계의 관리자만 (시작 후 풀 잠금).
+      allow create, delete: if isAdmin()
+        && (!exists(/databases/$(database)/documents/draft/state)
+            || draftState().status == 'setup');
+      // 관리자는 언제든 수정(교정/undo 복원). 대표는 합법 픽만 available→picked.
+      allow update: if isAdmin() || (isSignedIn() && isValidPlayerPick());
+
+      function isValidPlayerPick() {
+        let b = resource.data;
+        let a = request.resource.data;
+        let d = draftState();
+        return d.status == 'live'
+          && b.status == 'available'
+          && a.status == 'picked'
+          && a.pickedBy == d.currentPicker
+          && a.pickIndex == d.pickCount
+          && a.name == b.name
+          && a.order == b.order;
+      }
+    }
+
+    // ===== picks : 픽 기록 (불변, id == index 문자열) =====
+    match /picks/{pickId} {
+      allow read: if true;
+      allow update: if false;
+      allow delete: if isAdmin(); // undo
+      allow create: if isAdmin() || (isSignedIn() && isValidPickCreate(pickId));
+
+      function isValidPickCreate(pickId) {
+        let p = request.resource.data;
+        let d = draftState();
+        return d.status == 'live'
+          && p.index == d.pickCount
+          && pickId == string(p.index)
+          && p.team == d.currentPicker
+          && p.pickedByUid == request.auth.uid
+          && exists(/databases/$(database)/documents/players/$(p.playerId))
+          && getAfter(/databases/$(database)/documents/players/$(p.playerId)).data.status == 'picked'
+          && draftAfter().pickCount == d.pickCount + 1;
+      }
+    }
+
+    // ===== chat : 닉네임 채팅 (익명 create, 길이검증 + 레이트리밋) =====
+    match /chat/{msgId} {
+      allow read: if true;
+      allow update, delete: if isAdmin(); // 모더레이션
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 300
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.createdAt == request.time
+        // 같은 배치에서 rate/{uid} 가 갱신되어야 함(쿨다운은 rate 규칙이 강제).
+        && getAfter(/databases/$(database)/documents/rate/$(request.auth.uid)).data.lastChatAt == request.time;
+    }
+
+    // ===== rate : 채팅 쿨다운 (uid별) =====
+    match /rate/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.lastChatAt == request.time
+        && (!exists(/databases/$(database)/documents/rate/$(uid))
+            || get(/databases/$(database)/documents/rate/$(uid)).data.lastChatAt
+               + duration.value(3, 's') < request.time); // CHAT_COOLDOWN_SECONDS=3
+    }
+
+    // ===== presence : 접속자수 하트비트 =====
+    match /presence/{clientId} {
+      allow read: if true;
+      allow create, update: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.lastSeen == request.time;
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+  }
+}

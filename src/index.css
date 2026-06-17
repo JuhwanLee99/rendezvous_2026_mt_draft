@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* ── Rendezvous 브랜드 팔레트 (로고 기반) ────────────────── */
+@theme {
+  --color-navy: #1e4b8e;
+  --color-navy-dark: #16386b;
+  --color-navy-light: #2f63ab;
+  --color-brand-red: #da291c;
+  --color-brand-red-dark: #b21f15;
+  --color-ice: #cfe0f5;
+
+  --font-display: "Pretendard", system-ui, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+  --font-sans: "Pretendard", system-ui, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #f1f5f9;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* iOS safe-area friendly */
+  min-height: 100svh;
+}
+
+/* 숫자 핀패드 등에서 더블탭 줌 방지용 큰 탭타깃 */
+button {
+  touch-action: manipulation;
+}
+
+/* 픽 발표 팝업 등장 애니메이션 */
+@keyframes pop-scale-in {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-pop-in {
+  animation: pop-scale-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.animate-shake {
+  animation: shake-x 0.4s ease-in-out;
+}
