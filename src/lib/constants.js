@@ -45,6 +45,9 @@ export const TEAM_THEME = {
 
 export const otherTeam = (t) => (t === TEAM.A ? TEAM.B : TEAM.A);
 
+// 팀당 같은 포지션 최대 선발 인원
+export const POSITION_CAP = 2;
+
 // 픽 문서 id = index 문자열. "다음 픽은 반드시 picks/{pickCount}" 라서
 // 두 대표가 동시에 같은 슬롯을 쓰면 id 충돌로 한 명만 성공 → 더블픽 차단.
 // (정렬은 항상 index 필드로 orderBy 하므로 0패딩 불필요. 규칙에 string(index)로 검증)
