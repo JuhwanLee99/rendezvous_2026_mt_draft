@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { TEAM } from "../../lib/constants.js";
+import { TEAM, POSITION_CAP } from "../../lib/constants.js";
 import { parseYouTubeId } from "../../lib/youtube.js";
+
+const parsePositions = (s) =>
+  s.split(",").map((x) => x.trim()).filter(Boolean);
+
+const parsePlayers = (text) =>
+  text
+    .split("\n")
+    .map((line) => {
+      const parts = line.split(",");
+      return { name: (parts[0] || "").trim(), position: (parts[1] || "").trim() };
+    })
+    .filter((p) => p.name);
 
 export default function SetupPanel({ draft, players, actions, locked }) {
   const [teamAName, setTeamAName] = useState("");
@@ -10,13 +22,14 @@ export default function SetupPanel({ draft, players, actions, locked }) {
   const [firstPick, setFirstPick] = useState(TEAM.A);
   const [pinA, setPinA] = useState("");
   const [pinB, setPinB] = useState("");
+  const [positionsText, setPositionsText] = useState("");
   const [playersText, setPlayersText] = useState("");
   const [youtube, setYoutube] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const inited = useRef(false);
+  const playersInited = useRef(false);
 
-  // draft/players 최초 로드 시 폼 동기화
   useEffect(() => {
     if (inited.current || !draft) return;
     inited.current = true;
@@ -26,14 +39,28 @@ export default function SetupPanel({ draft, players, actions, locked }) {
     setCaptainB(draft.teamB?.captainName || "");
     setFirstPick(draft.firstPick || TEAM.A);
     setYoutube(draft.youtubeVideoId || "");
+    setPositionsText((draft.positions || []).join(", "));
   }, [draft]);
 
   useEffect(() => {
-    if (players?.length && !playersText) {
-      setPlayersText(players.map((p) => p.name).join("\n"));
+    if (players?.length && !playersInited.current) {
+      playersInited.current = true;
+      setPlayersText(
+        players.map((p) => `${p.name},${p.position || ""}`).join("\n"),
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players]);
+
+  const positions = parsePositions(positionsText);
+  const parsed = parsePlayers(playersText);
+  const invalid = parsed.filter(
+    (p) => !p.position || !positions.includes(p.position),
+  );
+  const posSummary = positions.map((pos) => ({
+    pos,
+    count: parsed.filter((p) => p.position === pos).length,
+  }));
+  const ytId = parseYouTubeId(youtube);
 
   const save = async () => {
     setBusy(true);
@@ -44,9 +71,9 @@ export default function SetupPanel({ draft, players, actions, locked }) {
         teamB: { name: teamBName.trim(), captainName: captainB.trim() },
         firstPick,
         youtube,
+        positions,
       });
-      const names = playersText.split("\n").map((s) => s.trim()).filter(Boolean);
-      await actions.setPlayers(names);
+      await actions.setPlayers(parsed);
       const pins = {};
       if (/^\d{4}$/.test(pinA)) pins.pinA = pinA;
       if (/^\d{4}$/.test(pinB)) pins.pinB = pinB;
@@ -61,9 +88,6 @@ export default function SetupPanel({ draft, players, actions, locked }) {
     }
   };
 
-  const playerCount = playersText.split("\n").map((s) => s.trim()).filter(Boolean).length;
-  const ytId = parseYouTubeId(youtube);
-
   return (
     <section className="rounded-2xl bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-lg font-bold text-navy">드래프트 설정</h2>
@@ -76,25 +100,8 @@ export default function SetupPanel({ draft, players, actions, locked }) {
       <fieldset disabled={locked || busy} className="space-y-6">
         {/* 팀 정보 */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TeamBox
-            title="청팀 (A)"
-            name={teamAName}
-            setName={setTeamAName}
-            captain={captainA}
-            setCaptain={setCaptainA}
-            pin={pinA}
-            setPin={setPinA}
-            pinSet={!!draft?.teamA && false}
-          />
-          <TeamBox
-            title="백팀 (B)"
-            name={teamBName}
-            setName={setTeamBName}
-            captain={captainB}
-            setCaptain={setCaptainB}
-            pin={pinB}
-            setPin={setPinB}
-          />
+          <TeamBox title="청팀 (A)" name={teamAName} setName={setTeamAName} captain={captainA} setCaptain={setCaptainA} pin={pinA} setPin={setPinA} />
+          <TeamBox title="백팀 (B)" name={teamBName} setName={setTeamBName} captain={captainB} setCaptain={setCaptainB} pin={pinB} setPin={setPinB} />
         </div>
 
         {/* 선픽 */}
@@ -118,25 +125,45 @@ export default function SetupPanel({ draft, players, actions, locked }) {
               </button>
             ))}
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            스네이크: 1R [{firstPick === TEAM.A ? "청,백" : "백,청"}] · 2R [
-            {firstPick === TEAM.A ? "백,청" : "청,백"}] · 3R [
-            {firstPick === TEAM.A ? "청,백" : "백,청"}] …
-          </p>
+        </div>
+
+        {/* 포지션 목록 */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-600">
+            포지션 목록 (콤마로 구분) — 팀당 포지션별 최대 {POSITION_CAP}명
+          </label>
+          <input
+            value={positionsText}
+            onChange={(e) => setPositionsText(e.target.value)}
+            placeholder="투수, 포수, 내야수, 외야수"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-navy focus:outline-none"
+          />
+          {positions.length > 0 && (
+            <p className="mt-1 text-xs text-slate-400">
+              {posSummary.map((s) => `${s.pos} ${s.count}명`).join(" · ")}
+            </p>
+          )}
         </div>
 
         {/* 선수 풀 */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-600">
-            참가 선수 (한 줄에 한 명) — {playerCount}명
+            참가 선수 (한 줄에 <b>이름,포지션</b>) — {parsed.length}명
           </label>
           <textarea
             value={playersText}
             onChange={(e) => setPlayersText(e.target.value)}
-            rows={8}
-            placeholder={"홍길동\n김철수\n이영희\n…"}
+            rows={9}
+            placeholder={"홍길동,투수\n김철수,포수\n이영희,외야수\n…"}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:border-navy focus:outline-none"
           />
+          {invalid.length > 0 && (
+            <p className="mt-1 text-xs text-brand-red">
+              ⚠️ 포지션이 비었거나 목록에 없는 선수 {invalid.length}명:{" "}
+              {invalid.slice(0, 5).map((p) => p.name).join(", ")}
+              {invalid.length > 5 ? " …" : ""}
+            </p>
+          )}
         </div>
 
         {/* 유튜브 */}

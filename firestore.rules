@@ -29,14 +29,6 @@ service cloud.firestore {
       return getAfter(/databases/$(database)/documents/draft/state).data;
     }
 
-    // draftEngine.expectedTeam 의 규칙 인라인 형태 (루프 없는 순수 모듈러).
-    // round0(=floor(index/2)) 짝수 ⇔ index % 4 ∈ {0,1}
-    function expectedTeam(index, firstPick) {
-      return (index % 4 < 2)
-        ? (index % 2 == 0 ? firstPick : (firstPick == 'A' ? 'B' : 'A'))
-        : (index % 2 == 0 ? (firstPick == 'A' ? 'B' : 'A') : firstPick);
-    }
-
     // ===== draft/state : 설정 + 라이브 턴 상태 =====
     match /draft/state {
       allow read: if true;
@@ -45,16 +37,18 @@ service cloud.firestore {
       function isValidTurnAdvance() {
         let b = resource.data;
         let a = request.resource.data;
-        let complete = a.pickCount >= b.poolSize;
+        // 픽 1건당 pickCount +1. 설정값(포지션·선픽·풀·팀·유튜브)은 불변.
+        // posCount/availByPos/slotIndex/currentRound/currentPicker 정합성은 픽 측 규칙에서 검증.
         return b.status == 'live'
           && a.pickCount == b.pickCount + 1
           && a.firstPick == b.firstPick
           && a.poolSize == b.poolSize
+          && a.positions == b.positions
           && a.teamA == b.teamA
           && a.teamB == b.teamB
           && a.youtubeVideoId == b.youtubeVideoId
-          && a.status == (complete ? 'done' : 'live')
-          && a.currentPicker == (complete ? null : expectedTeam(a.pickCount, b.firstPick));
+          && (a.status == 'live' || a.status == 'done')
+          && (a.currentPicker == null || a.currentPicker == 'A' || a.currentPicker == 'B');
       }
     }
 
@@ -85,7 +79,8 @@ service cloud.firestore {
           && a.pickedBy == d.currentPicker
           && a.pickIndex == d.pickCount
           && a.name == b.name
-          && a.order == b.order;
+          && a.order == b.order
+          && a.position == b.position;
       }
     }
 
@@ -99,14 +94,20 @@ service cloud.firestore {
       function isValidPickCreate(pickId) {
         let p = request.resource.data;
         let d = draftState();
+        let da = draftAfter();
+        let pos = get(/databases/$(database)/documents/players/$(p.playerId)).data.position;
         return d.status == 'live'
           && p.index == d.pickCount
           && pickId == string(p.index)
           && p.team == d.currentPicker
           && p.pickedByUid == request.auth.uid
-          && exists(/databases/$(database)/documents/players/$(p.playerId))
+          && p.position == pos
           && getAfter(/databases/$(database)/documents/players/$(p.playerId)).data.status == 'picked'
-          && draftAfter().pickCount == d.pickCount + 1;
+          && da.pickCount == d.pickCount + 1
+          // 포지션 캡: 팀당 같은 포지션 최대 2명 (서버 강제)
+          && d.posCount[p.team][pos] < 2
+          && da.posCount[p.team][pos] == d.posCount[p.team][pos] + 1
+          && da.availByPos[pos] == d.availByPos[pos] - 1;
       }
     }
 
