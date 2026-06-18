@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../lib/firebase.js";
 import { sha256Hex } from "../lib/hash.js";
+import { normalizeGameDateTime } from "../lib/gameDateTime.js";
 import { parseYouTubeId } from "../lib/youtube.js";
 import {
   availByPosFrom,
@@ -35,6 +36,7 @@ const DEFAULT_STATE = {
   positions: [],
   posCount: { A: {}, B: {} },
   availByPos: {},
+  gameDateTime: "",
   youtubeVideoId: null,
   teamA: { name: "", captainName: "" },
   teamB: { name: "", captainName: "" },
@@ -50,13 +52,15 @@ export function useDraftActions() {
 
   // 팀/대표/선픽/포지션/유튜브 설정 (setup 단계)
   const saveConfig = useCallback(
-    async ({ teamA, teamB, firstPick, youtube, positions }) => {
+    async ({ teamA, teamB, firstPick, gameDateTime, youtube, positions }) => {
       await ensureDraft();
       const patch = { updatedAt: serverTimestamp() };
       if (teamA) patch.teamA = teamA;
       if (teamB) patch.teamB = teamB;
       if (firstPick) patch.firstPick = firstPick;
       if (positions) patch.positions = positions;
+      if (gameDateTime !== undefined)
+        patch.gameDateTime = normalizeGameDateTime(gameDateTime);
       if (youtube !== undefined)
         patch.youtubeVideoId = parseYouTubeId(youtube) || null;
       await updateDoc(stateRef(), patch);

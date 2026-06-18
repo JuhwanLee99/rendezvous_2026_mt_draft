@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { TEAM, POSITION_CAP } from "../../lib/constants.js";
+import { formatGameDateTime, normalizeGameDateTime } from "../../lib/gameDateTime.js";
 import { parseYouTubeId } from "../../lib/youtube.js";
 
 const parsePositions = (s) =>
@@ -22,6 +23,7 @@ export default function SetupPanel({ draft, players, actions, locked }) {
   const [firstPick, setFirstPick] = useState(TEAM.A);
   const [pinA, setPinA] = useState("");
   const [pinB, setPinB] = useState("");
+  const [gameDateTime, setGameDateTime] = useState("");
   const [positionsText, setPositionsText] = useState("");
   const [playersText, setPlayersText] = useState("");
   const [youtube, setYoutube] = useState("");
@@ -38,6 +40,7 @@ export default function SetupPanel({ draft, players, actions, locked }) {
     setTeamBName(draft.teamB?.name || "");
     setCaptainB(draft.teamB?.captainName || "");
     setFirstPick(draft.firstPick || TEAM.A);
+    setGameDateTime(normalizeGameDateTime(draft.gameDateTime));
     setYoutube(draft.youtubeVideoId || "");
     setPositionsText((draft.positions || []).join(", "));
   }, [draft]);
@@ -70,6 +73,7 @@ export default function SetupPanel({ draft, players, actions, locked }) {
         teamA: { name: teamAName.trim(), captainName: captainA.trim() },
         teamB: { name: teamBName.trim(), captainName: captainB.trim() },
         firstPick,
+        gameDateTime,
         youtube,
         positions,
       });
@@ -102,6 +106,25 @@ export default function SetupPanel({ draft, players, actions, locked }) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TeamBox title="청팀 (A)" name={teamAName} setName={setTeamAName} captain={captainA} setCaptain={setCaptainA} pin={pinA} setPin={setPinA} />
           <TeamBox title="백팀 (B)" name={teamBName} setName={setTeamBName} captain={captainB} setCaptain={setCaptainB} pin={pinB} setPin={setPinB} />
+        </div>
+
+        <div>
+          <label htmlFor="game-date-time" className="mb-1.5 block text-sm font-medium text-slate-600">
+            경기 날짜 및 시작 시간
+          </label>
+          <input
+            id="game-date-time"
+            type="datetime-local"
+            step="60"
+            value={gameDateTime}
+            onChange={(e) => setGameDateTime(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-navy focus:outline-none sm:max-w-sm"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            {gameDateTime
+              ? `이미지 표시: ${formatGameDateTime(gameDateTime)}`
+              : "선택하면 요일·날짜·시간이 최종 명단 이미지에 표시됩니다."}
+          </p>
         </div>
 
         {/* 선픽 */}

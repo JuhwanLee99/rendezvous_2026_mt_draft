@@ -46,6 +46,7 @@ service cloud.firestore {
           && a.positions == b.positions
           && a.teamA == b.teamA
           && a.teamB == b.teamB
+          && a.get('gameDateTime', '') == b.get('gameDateTime', '')
           && a.youtubeVideoId == b.youtubeVideoId
           && (a.status == 'live' || a.status == 'done')
           && (a.currentPicker == null || a.currentPicker == 'A' || a.currentPicker == 'B');

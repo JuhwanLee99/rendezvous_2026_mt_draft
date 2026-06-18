@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TEAM } from "../../lib/constants.js";
+import { formatGameDateTime } from "../../lib/gameDateTime.js";
 import { downloadTeamCard } from "../../lib/teamCard.js";
 import { downloadFieldCard, renderFieldCard } from "../../lib/fieldCard.js";
 
@@ -29,11 +30,7 @@ export default function ResultBoard({ draft, picks }) {
   const [ratio, setRatio] = useState("1:1");
   const [view, setView] = useState("field"); // "table" | "field"
   const [busy, setBusy] = useState("");
-  const [dateStr, setDateStr] = useState("");
-
-  useEffect(() => {
-    setDateStr(new Date().toLocaleDateString("ko-KR"));
-  }, []);
+  const dateStr = formatGameDateTime(draft?.gameDateTime);
 
   const positions = draft?.positions || [];
   const teamNames = {
