@@ -5,9 +5,25 @@ import {
 } from "./teamCard.js";
 import { SLOTS, resolveSlot } from "./positionField.js";
 
+export function getFieldGeometry(fx, fy, fw, fh) {
+  const home = { x: fx + fw * 0.5, y: fy + fh * 0.9 };
+  const foulReach = Math.min(fw * 0.45, fh * 0.55);
+  const baseLeg = Math.min(fw * 0.215, fh * 0.255);
+  const leftFoul = { x: home.x - foulReach, y: home.y - foulReach };
+  const rightFoul = { x: home.x + foulReach, y: home.y - foulReach };
+  const first = { x: home.x + baseLeg, y: home.y - baseLeg };
+  const second = { x: home.x, y: home.y - baseLeg * 2 };
+  const third = { x: home.x - baseLeg, y: home.y - baseLeg };
+
+  return {
+    home, leftFoul, rightFoul, first, second, third,
+    mound: { x: home.x, y: home.y - baseLeg },
+  };
+}
+
 function drawField(ctx, fx, fy, fw, fh) {
-  const X = (n) => fx + n * fw;
-  const Y = (n) => fy + n * fh;
+  const geometry = getFieldGeometry(fx, fy, fw, fh);
+  const { home, leftFoul, rightFoul, first, second, third, mound } = geometry;
   ctx.save();
   roundRect(ctx, fx, fy, fw, fh, 26);
   ctx.clip();
@@ -23,23 +39,23 @@ function drawField(ctx, fx, fy, fw, fh) {
   ctx.strokeStyle = "rgba(255,255,255,0.85)";
   ctx.lineWidth = Math.max(4, fw * 0.012);
   ctx.beginPath();
-  ctx.moveTo(X(0.04), Y(0.36));
-  ctx.quadraticCurveTo(X(0.5), Y(0.02), X(0.96), Y(0.36));
+  ctx.moveTo(leftFoul.x, leftFoul.y);
+  ctx.quadraticCurveTo(fx + fw * 0.5, fy + fh * 0.02, rightFoul.x, rightFoul.y);
   ctx.stroke();
   // 파울 라인
   ctx.beginPath();
-  ctx.moveTo(X(0.5), Y(0.9));
-  ctx.lineTo(X(0.05), Y(0.36));
-  ctx.moveTo(X(0.5), Y(0.9));
-  ctx.lineTo(X(0.95), Y(0.36));
+  ctx.moveTo(home.x, home.y);
+  ctx.lineTo(leftFoul.x, leftFoul.y);
+  ctx.moveTo(home.x, home.y);
+  ctx.lineTo(rightFoul.x, rightFoul.y);
   ctx.stroke();
   // 내야 흙 다이아몬드
   const diamond = () => {
     ctx.beginPath();
-    ctx.moveTo(X(0.5), Y(0.9));
-    ctx.lineTo(X(0.72), Y(0.62));
-    ctx.lineTo(X(0.5), Y(0.34));
-    ctx.lineTo(X(0.28), Y(0.62));
+    ctx.moveTo(home.x, home.y);
+    ctx.lineTo(first.x, first.y);
+    ctx.lineTo(second.x, second.y);
+    ctx.lineTo(third.x, third.y);
     ctx.closePath();
   };
   diamond();
@@ -51,25 +67,25 @@ function drawField(ctx, fx, fy, fw, fh) {
   ctx.stroke();
   // 베이스
   const bs = fw * 0.022;
-  const base = (nx, ny) => {
+  const drawBase = ({ x, y }) => {
     ctx.save();
-    ctx.translate(X(nx), Y(ny));
+    ctx.translate(x, y);
     ctx.rotate(Math.PI / 4);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(-bs / 2, -bs / 2, bs, bs);
     ctx.restore();
   };
-  base(0.72, 0.62);
-  base(0.5, 0.34);
-  base(0.28, 0.62);
+  drawBase(first);
+  drawBase(second);
+  drawBase(third);
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.arc(X(0.5), Y(0.9), bs * 0.6, 0, Math.PI * 2);
+  ctx.arc(home.x, home.y, bs * 0.6, 0, Math.PI * 2);
   ctx.fill();
   // 마운드
   ctx.fillStyle = "#caa46a";
   ctx.beginPath();
-  ctx.arc(X(0.5), Y(0.62), fw * 0.03, 0, Math.PI * 2);
+  ctx.arc(mound.x, mound.y, fw * 0.03, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }

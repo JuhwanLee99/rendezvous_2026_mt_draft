@@ -50,32 +50,43 @@ export function paintBackground(ctx, W, H, th) {
   }
 }
 
-// 로고 + 팀명 + 부제 + 대표. 본문 시작 y 를 반환.
+// 로고와 팀 정보를 가로로 배치해 명단 본문에 충분한 세로 공간을 남긴다.
 export async function drawHeader(ctx, { team, teamName, captainName, dateStr }, W, P, th) {
-  let y = P;
+  const logoSize = 112;
+  let textX;
+  const headerBottom = P + logoSize + 42;
   try {
     const im = await loadImage(logo);
-    const s = 150;
-    ctx.drawImage(im, (W - s) / 2, y, s, s);
-    y += s + 22;
+    ctx.drawImage(im, P, P, logoSize, logoSize);
+    textX = P + logoSize + 36;
   } catch {
-    y += 40;
+    textX = P;
   }
-  ctx.textAlign = "center";
+
+  ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = th.text;
-  ctx.font = `800 84px ${FONT}`;
-  ctx.fillText(teamName || (team === "A" ? "청팀" : "백팀"), W / 2, y + 76);
-  y += 106;
   ctx.fillStyle = th.sub;
-  ctx.font = `500 32px ${FONT}`;
-  ctx.fillText(`Rendezvous 청백전 드래프트${dateStr ? " · " + dateStr : ""}`, W / 2, y + 30);
-  y += 44;
-  if (captainName) {
-    ctx.fillText(`대표 ${captainName}`, W / 2, y + 30);
-    y += 44;
+  ctx.font = `700 24px ${FONT}`;
+  ctx.fillText("RENDEZVOUS 청백전 드래프트", textX, P + 25);
+
+  ctx.fillStyle = th.text;
+  ctx.font = `800 62px ${FONT}`;
+  ctx.fillText(teamName || (team === "A" ? "청팀" : "백팀"), textX, P + 85, W - textX - P);
+
+  const meta = [dateStr, captainName ? `대표 ${captainName}` : ""].filter(Boolean).join("  ·  ");
+  if (meta) {
+    ctx.fillStyle = th.sub;
+    ctx.font = `600 25px ${FONT}`;
+    ctx.fillText(meta, textX, P + 119, W - textX - P);
   }
-  return y + 20;
+
+  ctx.strokeStyle = th.line;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(P, headerBottom);
+  ctx.lineTo(W - P, headerBottom);
+  ctx.stroke();
+  return headerBottom + 18;
 }
 
 export function drawFooter(ctx, W, H, P, th) {
@@ -121,20 +132,20 @@ export async function renderTeamCard(opts) {
       ctx.lineTo(W - P, top);
       ctx.stroke();
     }
-    const pillH = Math.min(66, rowH - 28);
-    const pillW = 230;
+    const pillH = Math.max(44, Math.min(68, rowH - 14));
+    const pillW = 240;
     roundRect(ctx, P, cy - pillH / 2, pillW, pillH, pillH / 2);
     ctx.fillStyle = th.pillBg;
     ctx.fill();
     ctx.fillStyle = th.pillText;
-    ctx.font = `700 ${Math.round(pillH * 0.46)}px ${FONT}`;
+    ctx.font = `800 ${Math.round(Math.max(23, Math.min(32, pillH * 0.48)))}px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(pos, P + pillW / 2, cy + 1);
     const names = picksByPos[pos] || [];
     ctx.textAlign = "left";
     ctx.fillStyle = names.length ? th.text : th.empty;
-    ctx.font = `600 ${Math.round(Math.min(58, rowH * 0.4))}px ${FONT}`;
-    ctx.fillText(names.length ? names.join("   ·   ") : "—", P + pillW + 44, cy + 1);
+    ctx.font = `700 ${Math.round(Math.max(28, Math.min(52, rowH * 0.45)))}px ${FONT}`;
+    ctx.fillText(names.length ? names.join("   ·   ") : "—", P + pillW + 38, cy + 1);
   });
 
   drawFooter(ctx, W, H, P, th);
