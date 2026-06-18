@@ -104,6 +104,19 @@ firebase deploy --only firestore:rules
 드래프트가 끝나면(`status=done`) 현황·관리자 화면 상단에 **최종 명단**이 뜬다([`ResultBoard`](src/components/status/ResultBoard.jsx)).
 - **표 / 그라운드** 뷰 전환 — 그라운드 뷰는 선수를 **실제 수비 위치**에 배치([`positionField`](src/lib/positionField.js)가 포지션명→위치 매핑; 투수·포수·1루·유격·좌익… 및 내야수/외야수 묶음 지원, 인식 실패 시 "기타").
 - 팀별 **PNG 내보내기** (1:1 / 3:4) — 외부 라이브러리 없이 Canvas로 그림([`teamCard`](src/lib/teamCard.js) 표형, [`fieldCard`](src/lib/fieldCard.js) 그라운드형). 9포지션은 3:4가 여유롭다.
+- 관리자가 설정한 **경기 날짜·요일·시작 시간**을 두 이미지 형식의 헤더에 동일하게 표시한다.
+
+### 실제 PNG 출력 예시
+
+| 포지션별 선수 명단 (1:1) | 그라운드 배치 (1:1) |
+|:---:|:---:|
+| <img src="./docs/intro/img/export-table-1x1.png" width="420" alt="포지션별 선수 명단 1대1 PNG 출력 예시" /> | <img src="./docs/intro/img/export-field-1x1.png" width="420" alt="그라운드 선수 배치 1대1 PNG 출력 예시" /> |
+
+명단형은 헤더 비중을 줄이고 포지션·선수명을 크게 표시한다. 그라운드형은 홈에서 만나는 양쪽 파울라인과 2루에서 만나는 1·3루 연결선이 각각 **정확히 90도**가 되도록 그린다.
+
+<p align="center">
+  <img src="./docs/intro/img/export-field-3x4.png" width="320" alt="그라운드 선수 배치 3대4 PNG 출력 예시" />
+</p>
 
 ## 보안 모델 (무료 플랜의 한계 — 동아리 내부용 수용)
 
