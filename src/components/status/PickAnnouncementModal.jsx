@@ -1,4 +1,5 @@
 import { TEAM } from "../../lib/constants.js";
+import { displayPositionOf } from "../../lib/positionRules.js";
 import logo from "../../assets/logo.png";
 
 // 선수가 지명될 때 화면 전체에 크게 뜨는 발표 팝업.
@@ -8,6 +9,7 @@ export default function PickAnnouncementModal({ pick, teamName, onClose }) {
   const bg = isA
     ? "from-navy to-navy-dark"
     : "from-brand-red to-brand-red-dark";
+  const positionLabel = displayPositionOf(pick);
 
   return (
     <div
@@ -31,9 +33,9 @@ export default function PickAnnouncementModal({ pick, teamName, onClose }) {
         </p>
         <p className="mt-1 text-base text-white/80">지명 선수</p>
         <p className="mt-2 text-5xl font-black drop-shadow">{pick.playerName}</p>
-        {pick.position && (
+        {positionLabel && (
           <p className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1 text-lg font-bold">
-            {pick.position}
+            {positionLabel}
           </p>
         )}
         <button

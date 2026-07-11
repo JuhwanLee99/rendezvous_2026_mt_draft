@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "../common/Modal.jsx";
 import { POSITION_CAP } from "../../lib/constants.js";
+import { displayPositionOf } from "../../lib/positionRules.js";
 
 // 지명 가능한 선수를 포지션별로 묶어 표시. 우리 팀이 이미 cap명 채운 포지션은 비활성.
 export default function PlayerPickList({
@@ -94,6 +95,11 @@ export default function PlayerPickList({
                           }`}
                         >
                           {p.name}
+                          {displayPositionOf(p) !== p.position && (
+                            <span className="mt-0.5 block text-xs font-medium text-slate-400">
+                              {displayPositionOf(p)}
+                            </span>
+                          )}
                         </button>
                       </li>
                     );
@@ -109,7 +115,7 @@ export default function PlayerPickList({
         <h3 className="text-lg font-bold text-slate-800">선수 지명 확인</h3>
         <p className="mt-3 text-3xl font-black text-navy">{selected?.name}</p>
         <p className="mt-1 text-sm text-slate-500">
-          {selected?.position} · 이 선수를 지명하시겠습니까?
+          {displayPositionOf(selected)} · 이 선수를 지명하시겠습니까?
         </p>
         {error && <p className="mt-3 text-sm text-brand-red">{error}</p>}
         <div className="mt-6 flex gap-3">

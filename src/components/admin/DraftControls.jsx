@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { STATUS, TEAM } from "../../lib/constants.js";
 import TeamBadge from "../common/TeamBadge.jsx";
+import { displayPositionOf } from "../../lib/positionRules.js";
 
 export default function DraftControls({ draft, availablePlayers, actions }) {
   const status = draft?.status ?? STATUS.SETUP;
@@ -73,7 +74,7 @@ export default function DraftControls({ draft, availablePlayers, actions }) {
                 {availablePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
-                    {p.position ? ` (${p.position})` : ""}
+                    {displayPositionOf(p) ? ` (${displayPositionOf(p)})` : ""}
                   </option>
                 ))}
               </select>

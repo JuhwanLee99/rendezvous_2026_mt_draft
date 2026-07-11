@@ -81,7 +81,8 @@ service cloud.firestore {
           && a.pickIndex == d.pickCount
           && a.name == b.name
           && a.order == b.order
-          && a.position == b.position;
+          && a.position == b.position
+          && a.get('positionLabel', b.position) == b.get('positionLabel', b.position);
       }
     }
 
@@ -96,13 +97,16 @@ service cloud.firestore {
         let p = request.resource.data;
         let d = draftState();
         let da = draftAfter();
-        let pos = get(/databases/$(database)/documents/players/$(p.playerId)).data.position;
+        let player = get(/databases/$(database)/documents/players/$(p.playerId)).data;
+        let pos = player.position;
+        let positionLabel = player.get('positionLabel', pos);
         return d.status == 'live'
           && p.index == d.pickCount
           && pickId == string(p.index)
           && p.team == d.currentPicker
           && p.pickedByUid == request.auth.uid
           && p.position == pos
+          && p.get('positionLabel', pos) == positionLabel
           && getAfter(/databases/$(database)/documents/players/$(p.playerId)).data.status == 'picked'
           && da.pickCount == d.pickCount + 1
           // 포지션 캡: 팀당 같은 포지션 최대 2명 (서버 강제)

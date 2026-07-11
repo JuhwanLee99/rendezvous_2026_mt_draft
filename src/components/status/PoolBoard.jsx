@@ -1,4 +1,5 @@
 import TeamBadge from "../common/TeamBadge.jsx";
+import { displayPositionOf } from "../../lib/positionRules.js";
 
 // 전체 참가 선수 목록. 지명된 선수는 회색 처리 + 팀 뱃지.
 export default function PoolBoard({ players, teamNames = {} }) {
@@ -19,6 +20,7 @@ export default function PoolBoard({ players, teamNames = {} }) {
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {players.map((p) => {
             const picked = p.status === "picked";
+            const positionLabel = displayPositionOf(p);
             return (
               <li
                 key={p.id}
@@ -32,8 +34,8 @@ export default function PoolBoard({ players, teamNames = {} }) {
                   <span className={`truncate font-medium ${picked ? "line-through" : ""}`}>
                     {p.name}
                   </span>
-                  {p.position && (
-                    <span className="text-[11px] text-slate-400">{p.position}</span>
+                  {positionLabel && (
+                    <span className="text-[11px] text-slate-400">{positionLabel}</span>
                   )}
                 </span>
                 {picked && (

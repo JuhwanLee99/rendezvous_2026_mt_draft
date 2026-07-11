@@ -85,7 +85,11 @@ export function useDraftActions() {
   // 선수 풀 전체 교체 (setup). players: [{ name, position }]
   const setPlayers = useCallback(async (players) => {
     const clean = players
-      .map((p) => ({ name: (p.name || "").trim(), position: (p.position || "").trim() }))
+      .map((p) => ({
+        name: (p.name || "").trim(),
+        position: (p.position || "").trim(),
+        positionLabel: (p.positionLabel || p.position || "").trim(),
+      }))
       .filter((p) => p.name);
     const existing = await getDocs(collection(db, "players"));
     const batch = writeBatch(db);
@@ -95,6 +99,7 @@ export function useDraftActions() {
       batch.set(ref, {
         name: p.name,
         position: p.position,
+        positionLabel: p.positionLabel,
         order: i,
         status: "available",
         pickedBy: null,
@@ -160,6 +165,7 @@ export function useDraftActions() {
 
       const team = claimingTeam;
       const pos = p.position;
+      const positionLabel = p.positionLabel || pos;
       const have = s.posCount?.[team]?.[pos] || 0;
       if (have >= POSITION_CAP)
         throw new Error(`이미 ${pos} 포지션을 ${POSITION_CAP}명 채웠습니다.`);
@@ -190,6 +196,7 @@ export function useDraftActions() {
         round: s.currentRound,
         team,
         position: pos,
+        positionLabel,
         teamPickIndex,
         playerId,
         playerName: p.name,

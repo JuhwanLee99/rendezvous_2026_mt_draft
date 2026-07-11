@@ -1,5 +1,6 @@
 import { groupByRound } from "../../hooks/useDraft.js";
 import { TEAM } from "../../lib/constants.js";
+import { displayPositionOf } from "../../lib/positionRules.js";
 
 // 내가 뽑은 선수 목록 (라운드 순).
 export default function MyRoster({ team, picks }) {
@@ -31,9 +32,9 @@ export default function MyRoster({ team, picks }) {
                   {round}
                 </span>
                 <span className="font-medium text-slate-800">{p.playerName}</span>
-                {p.position && (
+                {displayPositionOf(p) && (
                   <span className="ml-auto text-xs font-medium text-slate-400">
-                    {p.position}
+                    {displayPositionOf(p)}
                   </span>
                 )}
               </li>

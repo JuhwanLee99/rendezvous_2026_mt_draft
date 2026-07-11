@@ -5,7 +5,7 @@ describe("resolveSlot — 한국어 표준 포지션", () => {
   const cases = {
     투수: "P", 포수: "C", "1루수": "1B", "2루수": "2B", "3루수": "3B",
     유격수: "SS", 좌익수: "LF", 중견수: "CF", 우익수: "RF", 지명타자: "DH",
-    내야수: "INF", 외야수: "OF",
+    내야수: "INF", 외야수: "OF", 내야후보: "INF_BACKUP", 외야후보: "OF_BACKUP",
   };
   for (const [name, slot] of Object.entries(cases)) {
     it(`${name} → ${slot}`, () => expect(resolveSlot(name)).toBe(slot));
@@ -27,7 +27,10 @@ describe("resolveSlot — 약어/영문/공백", () => {
 
 describe("모든 슬롯에 좌표 존재", () => {
   it("resolveSlot 결과는 SLOTS 키에 포함", () => {
-    for (const slot of ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH", "INF", "OF"]) {
+    for (const slot of [
+      "P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH",
+      "INF", "OF", "INF_BACKUP", "OF_BACKUP",
+    ]) {
       expect(SLOTS[slot]).toBeTruthy();
     }
   });

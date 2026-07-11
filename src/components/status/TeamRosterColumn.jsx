@@ -1,6 +1,7 @@
 import { groupByRound } from "../../hooks/useDraft.js";
 import TeamBadge from "../common/TeamBadge.jsx";
 import { TEAM } from "../../lib/constants.js";
+import { displayPositionOf } from "../../lib/positionRules.js";
 
 // 한 팀의 지명 선수를 라운드 순서로.
 export default function TeamRosterColumn({ team, name, captainName, picks, highlight }) {
@@ -46,9 +47,9 @@ export default function TeamRosterColumn({ team, name, captainName, picks, highl
                   {round}
                 </span>
                 <span className="font-medium text-slate-800">{p.playerName}</span>
-                {p.position && (
+                {displayPositionOf(p) && (
                   <span className="ml-auto text-xs font-medium text-slate-400">
-                    {p.position}
+                    {displayPositionOf(p)}
                   </span>
                 )}
               </li>

@@ -1,19 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { TEAM, POSITION_CAP } from "../../lib/constants.js";
 import { formatGameDateTime, normalizeGameDateTime } from "../../lib/gameDateTime.js";
+import { displayPositionOf, parsePlayers, parsePositions } from "../../lib/positionRules.js";
 import { parseYouTubeId } from "../../lib/youtube.js";
-
-const parsePositions = (s) =>
-  s.split(",").map((x) => x.trim()).filter(Boolean);
-
-const parsePlayers = (text) =>
-  text
-    .split("\n")
-    .map((line) => {
-      const parts = line.split(",");
-      return { name: (parts[0] || "").trim(), position: (parts[1] || "").trim() };
-    })
-    .filter((p) => p.name);
 
 export default function SetupPanel({ draft, players, actions, locked }) {
   const [teamAName, setTeamAName] = useState("");
@@ -49,13 +38,13 @@ export default function SetupPanel({ draft, players, actions, locked }) {
     if (players?.length && !playersInited.current) {
       playersInited.current = true;
       setPlayersText(
-        players.map((p) => `${p.name},${p.position || ""}`).join("\n"),
+        players.map((p) => `${p.name},${displayPositionOf(p)}`).join("\n"),
       );
     }
   }, [players]);
 
   const positions = parsePositions(positionsText);
-  const parsed = parsePlayers(playersText);
+  const parsed = parsePlayers(playersText, positions);
   const invalid = parsed.filter(
     (p) => !p.position || !positions.includes(p.position),
   );
